@@ -1,0 +1,10 @@
+{
+  "name": "YouTube Automation",
+  "short_name": "YT Automation",
+  "description": "A learning and group meeting platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#facc15",
+  "icons": []
+}
