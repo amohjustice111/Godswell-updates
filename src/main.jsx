@@ -8,6 +8,24 @@ function App() {
   const [roomCode, setRoomCode] = React.useState('');
   const [showJoin, setShowJoin] = React.useState(false);
 
+  async function authenticate(mode) {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!url || !key) { setNotice('Account login needs Supabase setup. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in Vercel → Settings → Environment Variables, then redeploy.'); return; }
+    const email = window.prompt('Enter your email address:');
+    if (!email || !email.trim()) return;
+    const password = window.prompt('Enter your password (at least 6 characters):');
+    if (!password) return;
+    if (mode === 'signup' && password.length < 6) { setNotice('Password must be at least 6 characters.'); return; }
+    try {
+      const endpoint = mode === 'signup' ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password';
+      const response = await fetch(url.replace(/\\/$/, '') + endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: key }, body: JSON.stringify({ email: email.trim(), password }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.msg || data.message || data.error_description || data.error || 'Authentication failed.');
+      if (mode === 'signup' && !data.access_token) setNotice('Sign-up submitted. Check your email for the verification link, then log in.');
+      else setNotice(mode === 'signup' ? 'Account created successfully.' : 'Logged in successfully.');
+    } catch (error) { setNotice(error.message || 'Could not connect to authentication. Check your Supabase settings.'); }
+  }
   function createCall() {
     setNotice('The interface is ready, but live meetings need a video provider and account backend to be connected.');
   }
@@ -38,7 +56,7 @@ function App() {
         <span className="brand-mark"><Play size={21} fill="currentColor" /></span>
         <span><b>YouTube</b><small>AUTOMATION</small></span>
       </a>
-      <nav><a href="#features">Features</a><button className="nav-button" onClick={() => setNotice('Account sign-up and login will be enabled after we connect the authentication service.')}>Log in</button><button className="signup" onClick={() => setNotice('Account sign-up will be enabled after we connect the authentication service.')}>Sign up</button></nav>
+      <nav><a href="#features">Features</a><button className="nav-button" onClick={() => authenticate('login')}>Log in</button><button className="signup" onClick={() => authenticate('signup')}>Sign up</button></nav>
     </header>
 
     <main>
