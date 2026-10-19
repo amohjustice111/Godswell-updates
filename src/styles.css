@@ -32,3 +32,15 @@
 .meeting-help{font-size:13px;color:#5f6368;margin:14px 2px 0;line-height:1.5}
 @media(max-width:760px){.meeting-page{padding:18px 12px 24px;min-height:calc(100vh - 64px)}.meeting-toolbar{align-items:flex-start}.meeting-toolbar h1{font-size:22px}.meeting-toolbar-actions{width:100%}.secondary-button,.leave-button{padding:10px;font-size:13px}.jitsi-frame{height:70vh;min-height:420px;border-radius:8px}}
 @media(max-width:420px){.meeting-toolbar-actions{gap:6px}.secondary-button,.leave-button{gap:5px;padding:9px 8px}.jitsi-frame{min-height:390px}}
+
+
+/* Godswell creator branding — place the supplied image at /godswell-automation.jpg */
+.meet-app{position:relative;isolation:isolate}
+.meet-app::before{content:"";position:fixed;inset:72px 0 0;z-index:-1;background:linear-gradient(90deg,rgba(255,255,255,.97) 0%,rgba(255,255,255,.90) 54%,rgba(255,255,255,.76) 100%),url('/godswell-automation.jpg') center/cover no-repeat;pointer-events:none}
+.meet-topbar,.meet-footer{background:rgba(255,255,255,.94);backdrop-filter:blur(12px)}
+.meet-logo{width:38px;height:38px;border-radius:9px;overflow:hidden;background:#111 url('/godswell-automation.jpg') center/cover no-repeat;color:transparent}
+.meet-logo svg{display:none}
+.meet-brand{font-weight:500}
+.meet-main{background:transparent}
+.screen-card{box-shadow:0 12px 45px rgba(20,30,50,.18)}
+@media(max-width:760px){.meet-app::before{inset:64px 0 0;background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(255,255,255,.84)),url('/godswell-automation.jpg') center/cover no-repeat}}
