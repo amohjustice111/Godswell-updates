@@ -15,3 +15,20 @@
 .join-meeting button{border:1px solid #dadce0;border-radius:4px;background:#fff;color:#1a73e8;font-weight:500;padding:13px 15px}
 .join-meeting button:hover{background:#f6fafe}
 @media(max-width:420px){.join-meeting input{width:140px}.join-meeting button{padding:13px 10px}}
+
+
+.meeting-page{width:min(1440px,100%);margin:0 auto;padding:24px 28px 30px;flex:1;display:flex;flex-direction:column;min-height:calc(100vh - 72px)}
+.meeting-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px;flex-wrap:wrap}
+.meeting-toolbar h1{font-family:'Google Sans','Roboto',sans-serif;font-weight:500;font-size:25px;margin:0 0 6px;letter-spacing:-.4px}
+.meeting-toolbar p{color:#5f6368;font-size:14px;margin:0}
+.meeting-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.secondary-button,.leave-button{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #dadce0;background:#fff;color:#3c4043;border-radius:5px;padding:11px 13px;font-size:14px;font-weight:500}
+.secondary-button:hover{background:#f8f9fa}
+.leave-button{background:#d93025;color:#fff;border-color:#d93025}
+.leave-button:hover{background:#b3261e}
+.jitsi-frame{position:relative;flex:1;min-height:500px;height:calc(100vh - 210px);overflow:hidden;background:#202124;border-radius:12px}
+.jitsi-frame iframe{border:0;width:100%;height:100%;display:block}
+.meeting-loading{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:15px;pointer-events:none}
+.meeting-help{font-size:13px;color:#5f6368;margin:14px 2px 0;line-height:1.5}
+@media(max-width:760px){.meeting-page{padding:18px 12px 24px;min-height:calc(100vh - 64px)}.meeting-toolbar{align-items:flex-start}.meeting-toolbar h1{font-size:22px}.meeting-toolbar-actions{width:100%}.secondary-button,.leave-button{padding:10px;font-size:13px}.jitsi-frame{height:70vh;min-height:420px;border-radius:8px}}
+@media(max-width:420px){.meeting-toolbar-actions{gap:6px}.secondary-button,.leave-button{gap:5px;padding:9px 8px}.jitsi-frame{min-height:390px}}
