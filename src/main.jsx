@@ -1,109 +1,48 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Video, Users, ShieldCheck, MessageCircle, MonitorUp, Mic, Camera, Link2, ArrowRight, Sparkles, Play } from 'lucide-react';
+import { Video, Plus, CalendarDays, Menu, X, Download, Link2 } from 'lucide-react';
 import './styles.css';
 
 function App() {
+  const [menuOpen, setMenuOpen] = React.useState(false);
   const [notice, setNotice] = React.useState('');
-  const [roomCode, setRoomCode] = React.useState('');
-  const [showJoin, setShowJoin] = React.useState(false);
-
-  async function authenticate(mode) {
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
-    if (!url || !key) { setNotice('Account login needs Supabase setup. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in Vercel → Settings → Environment Variables, then redeploy.'); return; }
-    const email = window.prompt('Enter your email address:');
-    if (!email || !email.trim()) return;
-    const password = window.prompt('Enter your password (at least 6 characters):');
-    if (!password) return;
-    if (mode === 'signup' && password.length < 6) { setNotice('Password must be at least 6 characters.'); return; }
+  const [installPrompt, setInstallPrompt] = React.useState(null);
+  React.useEffect(() => {
+    const handler = (event) => { event.preventDefault(); setInstallPrompt(event); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+  async function installApp() {
+    if (!installPrompt) { setNotice('To install: open your browser menu and choose Install app or Add to Home screen.'); return; }
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  }
+  function createMeeting() {
+    setNotice('Meeting creation is not connected to a video service yet. You can still share this website link with your class.');
+  }
+  async function shareLink() {
     try {
-      const endpoint = mode === 'signup' ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password';
-      const response = await fetch(url.replace(/\\/$/, '') + endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: key }, body: JSON.stringify({ email: email.trim(), password }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.msg || data.message || data.error_description || data.error || 'Authentication failed.');
-      if (mode === 'signup' && !data.access_token) setNotice('Sign-up submitted. Check your email for the verification link, then log in.');
-      else setNotice(mode === 'signup' ? 'Account created successfully.' : 'Logged in successfully.');
-    } catch (error) { setNotice(error.message || 'Could not connect to authentication. Check your Supabase settings.'); }
+      if (navigator.share) await navigator.share({title:'YouTube Automation',url:window.location.origin});
+      else { await navigator.clipboard.writeText(window.location.origin); setNotice('Website link copied. Share it with your classmates.'); }
+    } catch { setNotice('Copy the website address from your browser to share it.'); }
   }
-  function createCall() {
-    setNotice('The interface is ready, but live meetings need a video provider and account backend to be connected.');
-  }
-  function joinCall(e) {
-    e.preventDefault();
-    if (!roomCode.trim()) {
-      setNotice('Enter a meeting link or code first.');
-      return;
-    }
-    setNotice('Meeting joining is not connected yet. Next we will connect authentication and the video service.');
-  }
-  async function shareSite() {
-    const shareData = { title: 'YouTube Automation', text: 'Join our learning meeting on YouTube Automation', url: window.location.origin };
-    try {
-      if (navigator.share) await navigator.share(shareData);
-      else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(window.location.origin);
-        setNotice('Website link copied. Paste it into WhatsApp to share.');
-      } else setNotice('Copy the website address from your browser and share it in WhatsApp.');
-    } catch {
-      setNotice('You can copy the website address from your browser and share it in WhatsApp.');
-    }
-  }
-
-  return <div className="app-shell">
-    <header className="topbar">
-      <a className="brand" href="/" aria-label="YouTube Automation home">
-        <span className="brand-mark"><Play size={21} fill="currentColor" /></span>
-        <span><b>YouTube</b><small>AUTOMATION</small></span>
-      </a>
-      <nav><a href="#features">Features</a><button className="nav-button" onClick={() => authenticate('login')}>Log in</button><button className="signup" onClick={() => authenticate('signup')}>Sign up</button></nav>
+  return <div className="meet-app">
+    <header className="meet-topbar">
+      <button className="menu-toggle" aria-label="Open menu" onClick={() => setMenuOpen(v=>!v)}>{menuOpen ? <X/> : <Menu/>}</button>
+      <a className="meet-brand" href="/" aria-label="YouTube Automation home"><span className="meet-logo"><Video size={22}/></span><span>YouTube <b>Automation</b></span></a>
+      <div className="top-actions"><button className="icon-button" title="Install app" onClick={installApp}><Download size={18}/></button><button className="profile" aria-label="Profile">J</button></div>
     </header>
-
-    <main>
-      <section className="hero">
-        <div className="hero-copy">
-          <div className="eyebrow"><Sparkles size={15}/> YOUR ONLINE LEARNING SPACE</div>
-          <h1>Learn together.<br/><span>Build something</span><br/>amazing.</h1>
-          <p className="intro">A simple home for your lessons, group conversations, and online learning sessions — all in one place.</p>
-          <div className="actions">
-            <button className="primary" onClick={createCall}><Video size={19}/> Create a call <ArrowRight size={17}/></button>
-            <button className="secondary" onClick={() => setShowJoin(v => !v)}><Link2 size={18}/> Join a call</button>
-          </div>
-          {showJoin && <form className="join-form" onSubmit={joinCall}>
-            <input value={roomCode} onChange={e => setRoomCode(e.target.value)} placeholder="Paste a meeting link or code" aria-label="Meeting link or code"/>
-            <button type="submit">Continue</button>
-          </form>}
-          {notice && <div className="notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss message">×</button></div>}
-          <div className="trust"><span className="trust-dot"></span> Designed for classes, teams, and creators</div>
-        </div>
-        <div className="hero-visual">
-          <div className="yellow-orb"></div>
-          <div className="call-card">
-            <div className="call-head"><span className="live-dot"></span> YOUR LEARNING ROOM <span className="lock">PRIVATE BY DESIGN</span></div>
-            <div className="video-grid">
-              <div className="person tile-one"><span className="avatar avatar-yellow">G</span><b>Godswell</b><small>Host</small></div>
-              <div className="person tile-two"><span className="avatar avatar-dark">J</span><b>Justice</b><small>Learning</small></div>
-              <div className="person tile-three"><span className="avatar avatar-purple">A</span><b>A classmate</b><small>Connected later</small></div>
-              <div className="add-tile"><Users size={25}/><b>More classmates</b><small>Group learning</small></div>
-            </div>
-            <div className="call-controls"><span><Mic size={17}/></span><span><Camera size={17}/></span><span><MonitorUp size={17}/></span><span><MessageCircle size={17}/></span><button onClick={createCall}>Start meeting</button></div>
-          </div>
-          <div className="floating-note"><ShieldCheck size={19}/><span><b>Host controls</b><small>Approve who joins</small></span></div>
-        </div>
+    {menuOpen && <><button className="drawer-scrim" aria-label="Close menu" onClick={()=>setMenuOpen(false)}></button><aside className="side-drawer"><div className="drawer-title">Menu</div><button onClick={()=>{setMenuOpen(false);createMeeting();}}><Plus size={18}/> New meeting</button><button onClick={()=>{setMenuOpen(false);setNotice('Your meeting schedule will appear here when a calendar service is connected.')}}><CalendarDays size={18}/> Scheduled meetings</button><button onClick={()=>{setMenuOpen(false);installApp();}}><Download size={18}/> Install app</button><button onClick={()=>{setMenuOpen(false);shareLink();}}><Link2 size={18}/> Share website</button></aside></>}
+    <main className="meet-main">
+      <section className="meet-copy"><h1>Video calls and meetings for everyone</h1><p>Connect, collaborate, and learn together from anywhere.</p>
+        <div className="meet-actions"><button className="new-meeting" onClick={createMeeting}><Video size={19}/> New meeting</button><button className="join-meeting" onClick={()=>setNotice('Paste a real meeting link from your video provider to join. Live meeting service is not connected yet.')}><input aria-label="Meeting code or link" placeholder="Enter a code or link" onKeyDown={e=>{if(e.key==='Enter')setNotice('Live meeting service is not connected yet.');}}/></button></div>
+        <div className="meet-divider"></div><p className="meet-footnote"><b>Tip:</b> You can install this website as an app from the menu.</p>
       </section>
-
-      <section className="features" id="features">
-        <div className="section-heading"><span>MADE FOR YOUR GROUP</span><h2>Everything for learning, in one place.</h2><p>The starter design is here. Live calls and accounts will be connected in the next setup stage.</p></div>
-        <div className="feature-grid">
-          <article><div className="feature-icon"><Video/></div><h3>Group video calls</h3><p>Meet face-to-face with classmates. Final participant capacity depends on the selected video provider.</p></article>
-          <article><div className="feature-icon"><MonitorUp/></div><h3>Share your screen</h3><p>Present notes, slides, websites, and lesson material during a session.</p></article>
-          <article><div className="feature-icon"><MessageCircle/></div><h3>Live chat</h3><p>Keep lesson questions and useful links alongside the meeting.</p></article>
-          <article><div className="feature-icon"><Link2/></div><h3>Share by WhatsApp</h3><p>Share the published site or meeting invitation using your device's share options.</p></article>
-        </div>
-      </section>
+      <section className="meet-art" aria-label="Meeting illustration"><div className="art-circle art-circle-one"></div><div className="art-circle art-circle-two"></div><div className="screen-card"><div className="screen-header"><i></i><i></i><i></i><span>YOUR LEARNING ROOM</span></div><div className="screen-people"><div className="screen-person p-one">G</div><div className="screen-person p-two">J</div><div className="screen-person p-three">A</div><div className="screen-person p-four"><Plus/></div></div><div className="screen-controls"><span></span><span></span><span></span><span></span><b></b></div></div><div className="art-caption"><span className="status-dot"></span> Your class, all in one place</div></section>
     </main>
-    <footer><a className="footer-brand" href="/">YOUTUBE <span>AUTOMATION</span></a><p>Learning together, one call at a time.</p><button onClick={shareSite}>Share website link</button></footer>
+    {notice && <div className="meet-notice" role="status">{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notice">×</button></div>}
+    <footer className="meet-footer"><span>Simple video meetings for learning</span><button onClick={shareLink}>Share website</button></footer>
   </div>;
 }
-
 createRoot(document.getElementById('root')).render(<App />);
