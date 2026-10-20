@@ -1,10 +1,14 @@
 {
-  "name": "YouTube Automation",
-  "short_name": "YT Automation",
-  "description": "A learning and group meeting platform",
+  "name": "Godswell Updates",
+  "short_name": "Godswell",
+  "description": "Browser-based meetings and learning",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#09090b",
-  "theme_color": "#facc15",
-  "icons": []
+  "orientation": "any",
+  "background_color": "#101722",
+  "theme_color": "#101722",
+  "icons": [
+    { "src": "/godswell-background.webp", "sizes": "any", "type": "image/webp", "purpose": "any maskable" }
+  ]
 }
