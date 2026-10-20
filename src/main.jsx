@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Video, Plus, CalendarDays, Menu, X, Download, Link2, UserRound, Copy, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Video, Plus, CalendarDays, Menu, X, Download, Link2, UserRound, Copy, ArrowLeft, Camera, CameraOff, Mic, MicOff, MonitorUp } from 'lucide-react';
 import './styles.css';
 
 function App() {
@@ -15,7 +15,11 @@ function App() {
   const [meetingInput, setMeetingInput] = React.useState('');
   const [roomName, setRoomName] = React.useState(() => new URLSearchParams(window.location.search).get('room') || '');
   const meetingContainer = React.useRef(null);
-  const apiRef = React.useRef(null);
+  const localVideoRef = React.useRef(null);
+  const localStreamRef = React.useRef(null);
+  const [cameraOn, setCameraOn] = React.useState(false);
+  const [micOn, setMicOn] = React.useState(false);
+  const [sharingScreen, setSharingScreen] = React.useState(false);
 
   React.useEffect(() => {
     const handler = (event) => { event.preventDefault(); setInstallPrompt(event); };
@@ -24,51 +28,65 @@ function App() {
   }, []);
 
   React.useEffect(() => {
-    if (!roomName || !meetingContainer.current) return undefined;
-    let cancelled = false;
-    const startMeeting = () => {
-      if (cancelled || !meetingContainer.current || !window.JitsiMeetExternalAPI) return;
-      if (apiRef.current) { apiRef.current.dispose(); apiRef.current = null; }
-      apiRef.current = new window.JitsiMeetExternalAPI('meet.jit.si', {
-        roomName,
-        parentNode: meetingContainer.current,
-        width: '100%',
-        height: '100%',
-        userInfo: { displayName: username || 'Guest' },
-        configOverwrite: {
-          prejoinPageEnabled: false,
-          startWithAudioMuted: false,
-          startWithVideoMuted: false,
-          disableDeepLinking: true,
-          constraints: {
-            video: { height: { ideal: 720, max: 720, min: 180 }, facingMode: 'user' },
-            audio: true
-          },
-          toolbarButtons: ['microphone', 'camera', 'desktop', 'chat', 'participants-pane', 'hangup', 'settings', 'raisehand', 'tileview', 'fullscreen']
-        },
-        interfaceConfigOverwrite: { SHOW_JITSI_WATERMARK: false, MOBILE_APP_PROMO: false }
-      });
-      apiRef.current.addEventListener('videoConferenceJoined', () => setNotice('You joined the meeting. Share the meeting link so others can join.'));
-    };
-    if (window.JitsiMeetExternalAPI) {
-      startMeeting();
-    } else {
-      let script = document.querySelector('script[data-jitsi-api="true"]');
-      if (!script) {
-        script = document.createElement('script');
-        script.src = 'https://meet.jit.si/external_api.js';
-        script.async = true;
-        script.dataset.jitsiApi = 'true';
-        document.body.appendChild(script);
-      }
-      script.addEventListener('load', startMeeting);
-      script.addEventListener('error', () => setNotice('Could not load the meeting service. Check your internet connection and try again.'));
-    }
+    if (!roomName) return;
+    startCamera();
     return () => {
-      cancelled = true;
-      if (apiRef.current) { apiRef.current.dispose(); apiRef.current = null; }
+      if (localStreamRef.current) localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+      setCameraOn(false);
+      setMicOn(false);
+      setSharingScreen(false);
     };
-  }, [roomName, username]);
+  }, [roomName]);
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
+      localStreamRef.current = stream;
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+      setCameraOn(true);
+      setMicOn(true);
+      setNotice('Camera preview is ready. Live calls between different people still need a signaling server.');
+    } catch {
+      setNotice('Camera or microphone access was blocked. Allow permissions in your browser and try again.');
+    }
+  }
+
+  async function toggleCamera() {
+    if (!localStreamRef.current) return startCamera();
+    const track = localStreamRef.current.getVideoTracks()[0];
+    if (track) { track.enabled = !track.enabled; setCameraOn(track.enabled); }
+  }
+
+  function toggleMic() {
+    const track = localStreamRef.current?.getAudioTracks()[0];
+    if (track) { track.enabled = !track.enabled; setMicOn(track.enabled); }
+    else setNotice('Allow microphone access to use the microphone.');
+  }
+
+  async function shareScreen() {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      setNotice('Screen sharing is not supported by this browser/device. Try a desktop browser.');
+      return;
+    }
+    try {
+      const screen = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const track = screen.getVideoTracks()[0];
+      if (localVideoRef.current) localVideoRef.current.srcObject = screen;
+      setSharingScreen(true);
+      track.addEventListener('ended', () => {
+        setSharingScreen(false);
+        if (localVideoRef.current && localStreamRef.current) localVideoRef.current.srcObject = localStreamRef.current;
+      });
+    } catch {
+      setNotice('Screen sharing was cancelled or not permitted by your browser.');
+    }
+  }
+
+  function stopScreenShare() {
+    if (localVideoRef.current && localStreamRef.current) localVideoRef.current.srcObject = localStreamRef.current;
+    setSharingScreen(false);
+  }
 
   function continueWithUsername(event) {
     event.preventDefault();
@@ -121,7 +139,7 @@ function App() {
   }
 
   function leaveMeeting() {
-    if (apiRef.current) { apiRef.current.dispose(); apiRef.current = null; }
+    if (localStreamRef.current) { localStreamRef.current.getTracks().forEach(track => track.stop()); localStreamRef.current = null; }
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.delete('room');
     window.history.pushState({}, '', nextUrl);
@@ -130,7 +148,7 @@ function App() {
   }
 
   async function copyMeetingLink() {
-    const link = 'https://meet.jit.si/' + encodeURIComponent(roomName);
+    const link = window.location.origin + window.location.pathname + '?room=' + encodeURIComponent(roomName);
     try {
       await navigator.clipboard.writeText(link);
       setNotice('Meeting link copied. Send it to anyone you want to invite.');
@@ -140,7 +158,7 @@ function App() {
   }
 
   async function shareLink() {
-    const link = roomName ? 'https://meet.jit.si/' + encodeURIComponent(roomName) : window.location.origin;
+    const link = roomName ? window.location.origin + window.location.pathname + '?room=' + encodeURIComponent(roomName) : window.location.origin;
     try {
       if (navigator.share) await navigator.share({title: roomName ? 'Join my Godswell meeting' : 'Godswell Updates', url: link});
       else { await navigator.clipboard.writeText(link); setNotice(roomName ? 'Meeting link copied. Share it with your guests.' : 'Website link copied. Share it with your classmates.'); }
@@ -169,8 +187,8 @@ function App() {
     </header>
     {menuOpen && <><button className="drawer-scrim" aria-label="Close menu" onClick={()=>setMenuOpen(false)}></button><aside className="side-drawer"><div className="drawer-title">Menu</div><button onClick={createMeeting}><Plus size={18}/> New meeting</button><button onClick={()=>{setMenuOpen(false);setNotice('Use New meeting to start a call, or enter a meeting link on the home page.')}}><CalendarDays size={18}/> Scheduled meetings</button><button onClick={()=>{setMenuOpen(false);installApp();}}><Download size={18}/> Install app</button><button onClick={()=>{setMenuOpen(false);shareLink();}}><Link2 size={18}/> Share {roomName ? 'meeting' : 'website'}</button>{username && <button onClick={changeUsername}><UserRound size={18}/> Change username</button>}</aside></>}
     {roomName ? <main className="meeting-page">
-      <div className="meeting-toolbar"><div><h1>Godswell meeting</h1><p>You're joining as <b>{username || 'Guest'}</b></p></div><div className="meeting-toolbar-actions"><button className="secondary-button" onClick={copyMeetingLink}><Copy size={17}/> Copy invite link</button><button className="secondary-button" onClick={()=>window.open('https://meet.jit.si/'+encodeURIComponent(roomName),'_blank','noopener,noreferrer')}><ExternalLink size={17}/> Open separately</button><button className="leave-button" onClick={leaveMeeting}><ArrowLeft size={17}/> Leave</button></div></div>
-      <div className="jitsi-frame" ref={meetingContainer}><div className="meeting-loading">Loading your meeting…</div></div>
+      <div className="meeting-toolbar"><div><h1>Godswell meeting</h1><p>You're joining as <b>{username || 'Guest'}</b></p></div><div className="meeting-toolbar-actions"><button className="secondary-button" onClick={copyMeetingLink}><Copy size={17}/> Copy invite link</button><button className="secondary-button" onClick={sharingScreen ? stopScreenShare : shareScreen}><MonitorUp size={17}/> {sharingScreen ? 'Stop sharing' : 'Share screen'}</button><button className="leave-button" onClick={leaveMeeting}><ArrowLeft size={17}/> Leave</button></div></div>
+      <div className="jitsi-frame local-camera-frame"><video ref={localVideoRef} autoPlay playsInline muted></video><div className="local-camera-controls"><button onClick={toggleCamera}>{cameraOn ? <CameraOff size={18}/> : <Camera size={18}/>} {cameraOn ? 'Turn camera off' : 'Turn camera on'}</button><button onClick={toggleMic}>{micOn ? <MicOff size={18}/> : <Mic size={18}/>} {micOn ? 'Mute mic' : 'Unmute mic'}</button><button onClick={sharingScreen ? stopScreenShare : shareScreen}><MonitorUp size={18}/> {sharingScreen ? 'Stop sharing' : 'Share screen'}</button></div><div className="local-camera-label">{username || 'Guest'} · Local preview</div></div>
       <p className="meeting-help">If your browser asks for camera or microphone permission, choose <b>Allow</b>. Share the invite link with others to join the same room.</p>
     </main> : <main className="meet-main">
       <section className="meet-copy">
@@ -178,7 +196,7 @@ function App() {
           <h1>Welcome, {username}.</h1>
           <p>Start a video call or join a meeting with a link or room code.</p>
           <div className="meet-actions"><button className="new-meeting" onClick={createMeeting}><Video size={19}/> New meeting</button><form className="join-meeting" onSubmit={joinMeeting}><input aria-label="Meeting code or link" value={meetingInput} onChange={e=>setMeetingInput(e.target.value)} placeholder="Enter a code or link"/><button type="submit">Join</button></form></div>
-          <div className="meet-divider"></div><p className="meet-footnote"><b>Tip:</b> Share the meeting link with others so they can join your call.</p>
+          <div className="meet-divider"></div><p className="meet-footnote"><b>Tip:</b> Share a room link. Multi-person calling needs a signaling server to be configured.</p>
         </> : <>
           <h1>Video calls and meetings for everyone</h1>
           <p>Choose a username to get started. No sign-up or password needed.</p>
@@ -194,7 +212,7 @@ function App() {
       <section className="meet-art" aria-label="Meeting illustration"><div className="art-circle art-circle-one"></div><div className="art-circle art-circle-two"></div><div className="screen-card"><div className="screen-header"><i></i><i></i><i></i><span>YOUR LEARNING ROOM</span></div><div className="screen-people"><div className="screen-person p-one">G</div><div className="screen-person p-two">J</div><div className="screen-person p-three">A</div><div className="screen-person p-four"><Plus/></div></div><div className="screen-controls"><span></span><span></span><span></span><span></span><b></b></div></div><div className="art-caption"><span className="status-dot"></span> Your class, all in one place</div></section>
     </main>}
     {notice && <div className="meet-notice" role="status">{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notice">×</button></div>}
-    {!roomName && <footer className="meet-footer"><span>Video meetings powered by Jitsi Meet</span><button onClick={shareLink}>Share website</button></footer>}
+    {!roomName && <footer className="meet-footer"><span>Browser-based camera preview</span><button onClick={shareLink}>Share website</button></footer>}
   </div>;
 }
 createRoot(document.getElementById('root')).render(<App />);
