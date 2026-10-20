@@ -39,6 +39,11 @@ function App() {
           prejoinPageEnabled: false,
           startWithAudioMuted: false,
           startWithVideoMuted: false,
+          disableDeepLinking: true,
+          constraints: {
+            video: { height: { ideal: 720, max: 720, min: 180 }, facingMode: 'user' },
+            audio: true
+          },
           toolbarButtons: ['microphone', 'camera', 'desktop', 'chat', 'participants-pane', 'hangup', 'settings', 'raisehand', 'tileview', 'fullscreen']
         },
         interfaceConfigOverwrite: { SHOW_JITSI_WATERMARK: false, MOBILE_APP_PROMO: false }
