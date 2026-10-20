@@ -44,3 +44,45 @@
 .meet-main{background:transparent}
 .screen-card{box-shadow:0 12px 45px rgba(20,30,50,.18)}
 @media(max-width:760px){.meet-app::before{inset:64px 0 0;background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(255,255,255,.84)),url('/godswell-automation.jpg') center/cover no-repeat}}
+
+
+/* Uploaded creator thumbnail: site-wide background and matching app mark */
+.meet-app{
+  position:relative;
+  isolation:isolate;
+  color:#fff;
+  background:
+    linear-gradient(105deg,rgba(3,10,20,.88) 0%,rgba(3,10,20,.72) 48%,rgba(3,10,20,.48) 100%),
+    url('/godswell-background.webp') center center / cover fixed;
+}
+.meet-topbar,.meet-footer{
+  background:rgba(5,12,24,.72);
+  border-color:rgba(255,255,255,.18);
+  backdrop-filter:blur(14px);
+}
+.meet-brand,.meet-copy .meet-footnote,.meet-footer{color:#f3f6fb}
+.meet-copy h1,.meet-footnote b{color:#fff}
+.meet-copy>p{color:#e0e7f0}
+.meet-divider{background:rgba(255,255,255,.22)}
+.meet-logo{
+  width:42px;height:42px;flex:0 0 42px;border-radius:50%;
+  background:url('/godswell-background.webp') center / cover no-repeat;
+  border:2px solid rgba(255,255,255,.85);
+  overflow:hidden;color:transparent;
+}
+.meet-logo svg{opacity:0}
+.menu-toggle,.icon-button{color:#fff}
+.menu-toggle:hover,.icon-button:hover{background:rgba(255,255,255,.14)}
+.profile{box-shadow:0 0 0 2px rgba(255,255,255,.3)}
+.meet-art .screen-card{background:rgba(255,255,255,.95)}
+.meet-art .art-circle-one{background:rgba(76,143,255,.22)}
+.meet-art .art-circle-two{background:rgba(255,255,255,.15)}
+.art-caption{background:rgba(9,18,32,.88);border-color:rgba(255,255,255,.25);color:#fff}
+.meet-footer button{color:#8ab4f8}
+.side-drawer{background:#111c2d;color:#fff;border-color:rgba(255,255,255,.15)}
+.drawer-title,.side-drawer button{color:#f3f6fb}
+.side-drawer button:hover{background:rgba(255,255,255,.1)}
+.side-drawer svg{color:#d5e2f5}
+.username-form label{color:#f3f6fb}
+.meet-notice{backdrop-filter:blur(10px)}
+@media(max-width:760px){.meet-app{background-attachment:scroll}}
