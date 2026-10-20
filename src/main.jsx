@@ -35,7 +35,12 @@ function App() {
         width: '100%',
         height: '100%',
         userInfo: { displayName: username || 'Guest' },
-        configOverwrite: { prejoinPageEnabled: false, startWithAudioMuted: false, startWithVideoMuted: false },
+        configOverwrite: {
+          prejoinPageEnabled: false,
+          startWithAudioMuted: false,
+          startWithVideoMuted: false,
+          toolbarButtons: ['microphone', 'camera', 'desktop', 'chat', 'participants-pane', 'hangup', 'settings', 'raisehand', 'tileview', 'fullscreen']
+        },
         interfaceConfigOverwrite: { SHOW_JITSI_WATERMARK: false, MOBILE_APP_PROMO: false }
       });
       apiRef.current.addEventListener('videoConferenceJoined', () => setNotice('You joined the meeting. Share the meeting link so others can join.'));
